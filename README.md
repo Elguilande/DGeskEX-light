@@ -148,5 +148,3 @@ Repositório principal: [GDeskEx](https://github.com/Elguilande/gdeskex)
 
 
 ---
-
-Quer que eu faça algum ajuste no texto ou adicionar mais alguma secção?
