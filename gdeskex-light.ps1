@@ -297,7 +297,63 @@ function Show-WSAStatus {
         Write-ColorOutput "Instalado: NÃO" "Red"
     }
 }
+function Install-WSABuilds {
+    Write-ColorOutput "=== Instalação do WSABuilds (Modo Light) ===" "Cyan"
+    Write-ColorOutput "Esta versão é experimental e limitada a 1.5 GB de RAM." "Yellow"
+    Write-Host ""
 
+    $osInfo = Get-CimInstance Win32_OperatingSystem
+    $isWindows11 = $osInfo.Caption -match "Windows 11"
+
+    if ($isWindows11) {
+        Write-ColorOutput "Sistema detectado: Windows 11" "Green"
+        $wsaUrl = "https://github.com/MustardChef/WSABuilds/releases/download/Windows_11_2407.40000.4.0_LTS_8/WSA_2407.40000.4.0_x64_Release-Nightly-with-Magisk-30.6-Stable-MindTheGapps-13.0.7z"
+    } else {
+        Write-ColorOutput "Sistema detectado: Windows 10" "Green"
+        $wsaUrl = "https://github.com/MustardChef/WSABuilds/releases/download/Windows_10_2407.40000.4.0_LTS_8/WSA_2407.40000.4.0_x64_Release-Nightly-with-Magisk-30.6-Stable-MindTheGapps-13.0.7z"
+    }
+
+    $tempDir = Join-Path $env:TEMP "WSABuilds-Light"
+    $sevenZipPath = Join-Path $tempDir "7zr.exe"
+    $archivePath = Join-Path $tempDir "WSA.7z"
+    $extractPath = Join-Path $tempDir "Extracted"
+
+    if (-not (Test-Path $tempDir)) {
+        New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+    }
+
+    # Baixa 7zr
+    if (-not (Test-Path $sevenZipPath)) {
+        Write-ColorOutput "Baixando 7-Zip..." "Cyan"
+        Invoke-WebRequest -Uri "https://www.7-zip.org/a/7zr.exe" -OutFile $sevenZipPath
+    }
+
+    Write-ColorOutput "Baixando WSABuilds (pode demorar)..." "Cyan"
+    try {
+        Invoke-WebRequest -Uri $wsaUrl -OutFile $archivePath -ErrorAction Stop
+    } catch {
+        Write-ColorOutput "Erro no download: $_" "Red"
+        return
+    }
+
+    Write-ColorOutput "Extraindo..." "Cyan"
+    if (-not (Test-Path $extractPath)) {
+        New-Item -ItemType Directory -Path $extractPath -Force | Out-Null
+    }
+
+    & $sevenZipPath x $archivePath -o"$extractPath" -y | Out-Null
+
+    $runBat = Get-ChildItem -Path $extractPath -Recurse -Filter "Run.bat" | Select-Object -First 1
+
+    if ($runBat) {
+        Write-ColorOutput "Iniciando instalação..." "Cyan"
+        Start-Process -FilePath $runBat.FullName -Wait
+        Write-ColorOutput "Instalação concluída!" "Green"
+        Write-ColorOutput "Agora execute: .\gdeskex-light.ps1 wsa-light" "Yellow"
+    } else {
+        Write-ColorOutput "Instalador não encontrado." "Red"
+    }
+}
 # ========== PONTO DE ENTRADA ==========
 $cmd = $args[0]
 
